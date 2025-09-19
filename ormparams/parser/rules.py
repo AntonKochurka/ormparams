@@ -1,4 +1,4 @@
-from ormparams.core.base_type import RuleReaction
+from ormparams.core.types import RuleReaction
 from ormparams.parser.suffixes import DefaultSuffixSet, SuffixSet
 
 
@@ -29,7 +29,7 @@ class ParserRules:
     """
 
     SUFFIX_DELIMITER: str = "__"
-    RELATIONSHIP_LOADER: str = "@"
+    RELATIONSHIPS_DELIMITER: str = "@"
 
     SUFFIX_SET: SuffixSet = DefaultSuffixSet()
-    UNKNOWN_SUFFIX_REACTION: RuleReaction = "error"
+    UNKNOWN_SUFFIX_REACTION: RuleReaction = "warn"

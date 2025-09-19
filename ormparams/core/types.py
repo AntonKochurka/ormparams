@@ -1,3 +1,3 @@
 from typing import Literal
 
-RuleReaction = Literal["error" | "ignore"]
+RuleReaction = Literal["error", "ignore", "warn"]

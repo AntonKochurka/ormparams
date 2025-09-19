@@ -6,6 +6,9 @@ _tpz_func = Callable[[Any, Any], Any]
 class SuffixContent(TypedDict):
     id: str
     func: _tpz_func
+    # IMPLEMENT FURTHER:
+    # val_mapper: Callable[[Any], Any]
+    # lambda value: int(value)
 
 
 class SuffixSet:
