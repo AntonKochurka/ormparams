@@ -1,7 +1,7 @@
-from typing import Dict, List, Optional, TypedDict
+from typing import Dict, List, TypedDict
 
-from ormparams.core.exceptions import UnknownOperatorError
-from ormparams.parser.rules import ParserRules
+from ormparams.exceptions import UnknownOperatorError
+from ormparams.rules import ParserRules
 
 
 class ParserResultItem(TypedDict):
@@ -28,8 +28,8 @@ class Parser:
             of operations, relationships, and raw values.
     """
 
-    def __init__(self, rules: Optional[ParserRules] = None):
-        self.rules: ParserRules = rules or ParserRules()
+    def __init__(self, rules: ParserRules):
+        self.rules: ParserRules = rules
 
     def parse_url(self, url: str) -> _tpz_parsed:
         """

@@ -7,3 +7,8 @@ class UnknownOperatorError(Exception):
             )
         super().__init__(message)
         self.operator = operator
+
+
+class UnknownFilterFieldError(Exception):
+    def __init__(self, message: str):
+        super().__init__(message)

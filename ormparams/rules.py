@@ -1,6 +1,6 @@
-from typing import Literal
+from typing import Literal, Optional
 
-from ormparams.parser.suffixes import DEFAULT_SUFFIXES, SuffixSet
+from ormparams.suffixes import DEFAULT_SUFFIXES, SuffixSet
 
 RuleReaction = Literal["error", "ignore", "warn"]
 
@@ -31,8 +31,17 @@ class ParserRules:
             - field="created_at", suffix="exact", value=2024-01-01
     """
 
-    SUFFIX_DELIMITER: str = "__"
-    RELATIONSHIPS_DELIMITER: str = "@"
+    def __init__(
+        self,
+        suffix_set: Optional[SuffixSet] = None,
+        unknown_suffix_reaction: RuleReaction = "error",
+        suffix_delimiter: str = "__",
+        relationships_delimiter: str = "@",
+        unknown_filtrated_field: RuleReaction = "error",
+    ):
+        self.SUFFIX_SET = suffix_set or DEFAULT_SUFFIXES
+        self.SUFFIX_DELIMITER = suffix_delimiter
+        self.RELATIONSHIPS_DELIMITER = relationships_delimiter
 
-    SUFFIX_SET: SuffixSet = DEFAULT_SUFFIXES
-    UNKNOWN_SUFFIX_REACTION: RuleReaction = "error"
+        self.UNKNOWN_SUFFIX_REACTION = unknown_suffix_reaction
+        self.UNKNOWN_FIlTRATED_FIELD = unknown_filtrated_field
