@@ -1,8 +1,12 @@
-from typing import Any, Dict, Iterator, Optional, Protocol, Self, TypedDict
+from typing import Any, Dict, Iterator, Optional, Protocol, Self, Type, TypedDict
+
+from sqlalchemy.orm import DeclarativeMeta
 
 
 class SuffixFunc(Protocol):
-    def __call__(self, column: Any, value: Any) -> Any: ...
+    def __call__(
+        self, column: Any, value: Any, model: Optional[Type[DeclarativeMeta]]
+    ) -> Any: ...
 
 
 class SuffixValueSerializer(Protocol):
@@ -46,7 +50,7 @@ class SuffixSet:
         Works like dict.get().
 
         [RETURNS]:
-            dict with {"id": str, "func": Callable} or default
+            dict with {"id": str, "func": Callable, serializer: Callable} or default
         """
         return self.suffixes.get(suffix, default)
 
@@ -60,10 +64,11 @@ class SuffixSet:
         Register or re-register suffix.
 
         [ARGS]:
-            suffix: str – the suffix itself (e.g., "gt")
+            suffix: str - the suffix itself (e.g., "gt")
             func: Callable(column, value) -> SQLAlchemy expression
                 - column is InstrumentedAttribute
                 - value is any user-provided value
+                - model [optional] to make filtration by another columns in table
             serializer: Callable(value) -> Any
                 - changes user-provided values in the specified way
                 -! works before SuffixFunc if is not None
@@ -92,15 +97,15 @@ def DefaultSuffixSet() -> SuffixSet:
     """
     s = SuffixSet()
 
-    s.register_suffix("exact", lambda col, v: col == v)
-    s.register_suffix("gt", lambda col, v: col > v)
-    s.register_suffix("ge", lambda col, v: col >= v)
-    s.register_suffix("lt", lambda col, v: col < v)
-    s.register_suffix("le", lambda col, v: col <= v)
-    s.register_suffix("contains", lambda col, v: col.contains(v))
-    s.register_suffix("startswith", lambda col, v: col.startswith(v))
-    s.register_suffix("endswith", lambda col, v: col.endswith(v))
-    s.register_suffix("in", lambda col, v: col.in_(v))
+    s.register_suffix("exact", lambda col, v, m: col == v)
+    s.register_suffix("gt", lambda col, v, m: col > v)
+    s.register_suffix("ge", lambda col, v, m: col >= v)
+    s.register_suffix("lt", lambda col, v, m: col < v)
+    s.register_suffix("le", lambda col, v, m: col <= v)
+    s.register_suffix("contains", lambda col, v, m: col.contains(v))
+    s.register_suffix("startswith", lambda col, v, m: col.startswith(v))
+    s.register_suffix("endswith", lambda col, v, m: col.endswith(v))
+    s.register_suffix("in", lambda col, v, m: col.in_(v))
 
     return s
 

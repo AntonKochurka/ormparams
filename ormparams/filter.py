@@ -3,7 +3,7 @@ from typing import Any, List, Optional, Self, Type
 from sqlalchemy import Select, select
 from sqlalchemy.orm import DeclarativeMeta, InstrumentedAttribute
 
-from ormparams.core.exceptions import UnknownFilterFieldError
+from ormparams.exceptions import UnknownFilterFieldError, UnknownOperatorError
 from ormparams.parser import Parser
 
 _tpz_attr = Optional[InstrumentedAttribute[Any]]
@@ -49,7 +49,7 @@ class OrmFilter:
                 self._validate_column(column_attr, field_name, relationships, model)
 
                 for op in operations:
-                    expr = self._build_expr(column_attr, op, value)
+                    expr = self._build_expr(column_attr, op, value, model)
                     if expr is not None:
                         self.query = self.query.where(expr)
 
@@ -61,10 +61,28 @@ class OrmFilter:
         ...
         # first@second@a... means load first, in first load second, and select field 'a'
 
-    def _build_expr(self, column_attr: _tpz_attr, op: str, value: str) -> None:
-        ...
-        # DONT FORGET, there may be more than one operation.
-        # DONT FORGET, if there's a serializer, use it, after use func
+    def _build_expr(
+        self, column_attr: _tpz_attr, op: str, value: str, model: Type[DeclarativeMeta]
+    ) -> Any:
+        data = self.parser.rules.SUFFIX_SET.get(op)
+
+        if data is None:
+            rule_action: str = getattr(
+                self.parser.rules, "UNKNOWN_SUFFIX_REACTION", "ignore"
+            )
+
+            if rule_action != "ignore":
+                if rule_action == "warn":
+                    print(f"Unknown suffix: {op}")
+                    # TODO: Implement here a logic for logger.
+                if rule_action == "error":
+                    raise UnknownOperatorError(operator=op)
+        else:
+            serializer = data["serializer"]
+            if serializer:
+                serializer(value)
+
+            return data["func"](column_attr, value, model)
 
     def _validate_column(
         self,
