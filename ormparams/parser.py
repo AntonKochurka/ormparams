@@ -1,5 +1,6 @@
 from typing import Dict, List, Optional, TypedDict
 
+from ormparams.core.exceptions import UnknownOperatorError
 from ormparams.parser.rules import ParserRules
 
 
@@ -67,7 +68,8 @@ class Parser:
                 -# please tell me when __a__b is not equal __b__a :D, im realy curios
             value (required): user-provided value
 
-        [ EXCEPTIONS ]
+        [ EXCEPTIONS ]:
+            UnknownOperatorError - if operator isn't registered in SuffixSet
         """
 
         tokens = url.split("&")
@@ -92,8 +94,7 @@ class Parser:
                             print(f"Unknown suffix: {op}")
                             # TODO: Implement here a logic for logger.
                         if unk == "error":
-                            # TODO: Make a scpecial ormparams exception for it.
-                            raise ValueError(f"Unknown suffix: {op}")
+                            raise UnknownOperatorError(operator=op)
 
             if field_name not in parsed_result:
                 parsed_result[field_name] = []

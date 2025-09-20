@@ -1,14 +1,18 @@
-from typing import Any, Callable, Dict, Self, TypedDict
+from typing import Any, Dict, Iterator, Optional, Protocol, Self, TypedDict
 
-_tpz_func = Callable[[Any, Any], Any]
+
+class SuffixFunc(Protocol):
+    def __call__(self, column: Any, value: Any) -> Any: ...
+
+
+class SuffixValueSerializer(Protocol):
+    def __call__(self, value: Any) -> Any: ...
 
 
 class SuffixContent(TypedDict):
     id: str
-    func: _tpz_func
-    # IMPLEMENT FURTHER:
-    # val_mapper: Callable[[Any], Any]
-    # lambda value: int(value)
+    func: SuffixFunc
+    serializer: Optional[SuffixValueSerializer]
 
 
 class SuffixSet:
@@ -23,11 +27,19 @@ class SuffixSet:
         - register custom suffixes with any callable
         - re-register existing ones
         - retrieve suffix rule like ordinary dict
-        -
     """
 
     def __init__(self) -> None:
         self.suffixes: Dict[str, SuffixContent] = {}
+
+    def __getitem__(self, suffix: str) -> SuffixContent:
+        return self.suffixes[suffix]
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self.suffixes)
+
+    def __len__(self) -> int:
+        return len(self.suffixes)
 
     def get(self, suffix: str, default: Any = None) -> SuffixContent | Any:
         """
@@ -38,20 +50,28 @@ class SuffixSet:
         """
         return self.suffixes.get(suffix, default)
 
-    def register_suffix(self, suffix: str, func: _tpz_func) -> Self:
+    def register_suffix(
+        self,
+        suffix: str,
+        func: SuffixFunc,
+        serializer: Optional[SuffixValueSerializer] = None,
+    ) -> Self:
         """
         Register or re-register suffix.
 
         [ARGS]:
             suffix: str – the suffix itself (e.g., "gt")
             func: Callable(column, value) -> SQLAlchemy expression
-                ! column is InstrumentedAttribute
-                ! value is any user-provided value
+                - column is InstrumentedAttribute
+                - value is any user-provided value
+            serializer: Callable(value) -> Any
+                - changes user-provided values in the specified way
+                -! works before SuffixFunc if is not None
 
         [RETURNS]:
             Self (for chaining)
         """
-        self.suffixes[suffix] = {"id": suffix, "func": func}
+        self.suffixes[suffix] = {"id": suffix, "func": func, "serializer": serializer}
         return self
 
 
@@ -83,3 +103,6 @@ def DefaultSuffixSet() -> SuffixSet:
     s.register_suffix("in", lambda col, v: col.in_(v))
 
     return s
+
+
+DEFAULT_SUFFIXES = DefaultSuffixSet()

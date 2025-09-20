@@ -1,5 +1,8 @@
-from ormparams.core.types import RuleReaction
-from ormparams.parser.suffixes import DefaultSuffixSet, SuffixSet
+from typing import Literal
+
+from ormparams.parser.suffixes import DEFAULT_SUFFIXES, SuffixSet
+
+RuleReaction = Literal["error", "ignore", "warn"]
 
 
 class ParserRules:
@@ -31,5 +34,5 @@ class ParserRules:
     SUFFIX_DELIMITER: str = "__"
     RELATIONSHIPS_DELIMITER: str = "@"
 
-    SUFFIX_SET: SuffixSet = DefaultSuffixSet()
-    UNKNOWN_SUFFIX_REACTION: RuleReaction = "warn"
+    SUFFIX_SET: SuffixSet = DEFAULT_SUFFIXES
+    UNKNOWN_SUFFIX_REACTION: RuleReaction = "error"
