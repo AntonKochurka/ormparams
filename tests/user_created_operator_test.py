@@ -42,6 +42,17 @@ def parser():
 
     suffix_set.register_suffix("alice", lambda col, _v, t: t.username == "alice")
 
+    def int_serializer(v: str) -> int:
+        return int(v) + 5
+
+    suffix_set.register_suffix(
+        "plus5", lambda col, v, _t: col == v, serializer=lambda v: int(v) + 5
+    )
+    # ?age__plus5=value
+    # this silly example literaly means:
+    # tell me who has age <value>+5
+    # just a silly example, like __alice one before.
+
     return Parser(rules=ParserRules(suffix_set=suffix_set))
 
 
@@ -52,7 +63,16 @@ def print_result(result):
 def test_two_operators(session, parser):
     orm_filter = OrmFilter(parser)
     query = orm_filter.filter(User, "age__gt__alice=18").query
-    print("SQl: ", str(query))
+    print("SQL: ", str(query))
+    result = session.execute(query).scalars().all()
+    print_result(result)
+    assert all(user.username == "alice" for user in result)
+    assert all(user.age > 18 for user in result)
 
+
+def test_serializer_suffix(session, parser):
+    orm_filter = OrmFilter(parser)
+    query = orm_filter.filter(User, "age__plus5=30").query
+    print("SQL: ", str(query))
     result = session.execute(query).scalars().all()
     print_result(result)

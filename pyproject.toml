@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ormparams"
-version = "0.1.0"
-description = "Query parameter parser for ORM-based applications"
+version = "0.1.1"
+description = "Query parameter parser and filter for ORM-based applications"
 authors = [
   { name="AntonKochurka", email="antonkotchurka@email.com" }
 ]
