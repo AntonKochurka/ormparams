@@ -105,7 +105,7 @@ def DefaultSuffixSet() -> SuffixSet:
     s.register_suffix("contains", lambda col, v, m: col.contains(v))
     s.register_suffix("startswith", lambda col, v, m: col.startswith(v))
     s.register_suffix("endswith", lambda col, v, m: col.endswith(v))
-    s.register_suffix("in", lambda col, v, m: col.in_(v))
+    s.register_suffix("in", lambda col, v, m: col.in_(v), lambda v: str(v).split(","))
 
     return s
 

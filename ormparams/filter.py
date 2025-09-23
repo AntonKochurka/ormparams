@@ -1,10 +1,11 @@
-from typing import Any, List, Optional, Self, Type
+from typing import Any, Dict, List, Optional, Self, Sequence, Type, Union
 
 from sqlalchemy import Select, select
 from sqlalchemy.orm import DeclarativeMeta, InstrumentedAttribute, RelationshipProperty
 
 from ormparams.exceptions import UnknownFilterFieldError, UnknownOperatorError
 from ormparams.parser import Parser
+from ormparams.suffixes import SuffixValueSerializer
 
 _tpz_attr = Optional[InstrumentedAttribute[Any]]
 _tpz_query = Optional[Select[Any]]
@@ -19,6 +20,10 @@ class OrmFilter:
         self,
         model: Type[DeclarativeMeta],
         params: str,
+        *,
+        allowed_fields: Optional[Union[str, List[str]]] = None,
+        allowed_operations: Optional[Union[str, List[str]]] = None,
+        serializers: Optional[Dict[str, SuffixValueSerializer]] = None,
     ) -> Self:
         """
         Apply params to SQLAlchemy query.
@@ -28,13 +33,34 @@ class OrmFilter:
             - params - urlparams for parser
                 -! not every urlparams for filtrating
                 -! make sure you separated which param for filtrating and which is not
+            - allowed fields and operations - undertandable from the name
+            - serializers - a dict of {"field_name": Callable(value)}
+
         """
         if self.query is None:
             self.query = select(model)
 
+        # to shut mypy up
+        def _normalize(value: Union[str, Sequence[str], None]) -> Union[str, list[str]]:
+            if value is None:
+                return "*"
+            if isinstance(value, str):
+                return value
+            return list(value)
+
+        allowed_fields = _normalize(
+            allowed_fields or getattr(model, "ORMPARAMS_FIELDS", "*")
+        )
+        allowed_operations = _normalize(
+            allowed_operations or getattr(model, "ORMPARAMS_OPERATIONS", "*")
+        )
+
         parsed_params = self.parser.parse_url(params)
 
         for field_name, statements in parsed_params.items():
+            if allowed_fields != "*" and field_name not in allowed_fields:
+                continue
+
             for statement in statements:
                 relationships: List[str] = statement["relationships"]
                 operations: List[str] = statement["operations"]
@@ -50,7 +76,17 @@ class OrmFilter:
                 self._validate_column(column_attr, field_name, relationships, model)
 
                 for op in operations:
-                    expr = self._build_expr(column_attr, op, value, model)
+                    if allowed_operations != "*" and op not in allowed_operations:
+                        continue
+
+                    serializer = (
+                        serializers.get(field_name, None)
+                        if serializers is not None
+                        else None
+                    )
+                    expr = self._build_expr(
+                        column_attr, op, value, model, serializer=serializer
+                    )
                     if expr is not None:
                         self.query = self.query.where(expr)
 
@@ -103,7 +139,13 @@ class OrmFilter:
         return column_attr
 
     def _build_expr(
-        self, column_attr: _tpz_attr, op: str, value: str, model: Type[DeclarativeMeta]
+        self,
+        column_attr: _tpz_attr,
+        op: str,
+        value: str,
+        model: Type[DeclarativeMeta],
+        *,
+        serializer: Optional[SuffixValueSerializer] = None,
     ) -> Any:
         data = self.parser.rules.SUFFIX_SET.get(op)
 
@@ -119,7 +161,7 @@ class OrmFilter:
                 if rule_action == "error":
                     raise UnknownOperatorError(operator=op)
         else:
-            serializer = data["serializer"]
+            serializer = serializer or data["serializer"]
             if serializer:
                 value = serializer(value)
 
