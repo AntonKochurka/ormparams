@@ -35,7 +35,9 @@ class OrmFilter:
                 -! make sure you separated which param for filtrating and which is not
             - allowed fields and operations - undertandable from the name
             - serializers - a dict of {"field_name": Callable(value)}
-
+                - ! You can make for instance
+                        {"age": lambda v: ..., "age__in": lambda v: ...}
+                    to make serializer for operation, not for field
         """
         if self.query is None:
             self.query = select(model)
@@ -79,11 +81,13 @@ class OrmFilter:
                     if allowed_operations != "*" and op not in allowed_operations:
                         continue
 
-                    serializer = (
-                        serializers.get(field_name, None)
-                        if serializers is not None
-                        else None
-                    )
+                    serializer = None
+                    if serializers:
+                        op_key = f"{field_name}{self.parser.rules.SUFFIX_DELIMITER}{op}"
+                        serializer = serializers.get(op_key) or serializers.get(
+                            field_name
+                        )
+
                     expr = self._build_expr(
                         column_attr, op, value, model, serializer=serializer
                     )
@@ -133,7 +137,7 @@ class OrmFilter:
                 if self.query is None:  # it isn't, just to shut mypy up.
                     self.query = select(model)
 
-                self.query = self.query.join(attr)
+                self.query = self.query.outerjoin(attr)
                 current_model = prop.mapper.class_
 
         return column_attr
@@ -156,8 +160,9 @@ class OrmFilter:
 
             if rule_action != "ignore":
                 if rule_action == "warn":
-                    print(f"Unknown suffix: {op}")
-                    # TODO: Implement here a logic for logger.
+                    _l = self.parser.rules.LOGGER
+                    if _l:
+                        _l.warning(f"Unknown suffix: {op}")
                 if rule_action == "error":
                     raise UnknownOperatorError(operator=op)
         else:
@@ -175,7 +180,6 @@ class OrmFilter:
         model: Type[DeclarativeMeta],
     ) -> bool:
         """Check if column exists, otherwise throw a warn/error/ignore"""
-
         if not column_attr:
             rule_action: str = getattr(
                 self.parser.rules, "UNKNOWN_FIlTRATED_FIELD", "ignore"
@@ -183,8 +187,9 @@ class OrmFilter:
             table_name = model.__name__ if not relationships else relationships[-1]
 
             if rule_action == "warn":
-                print(f"Unknown field {field_name} on table {table_name}")
-                # TODO: implement here logger
+                _l = self.parser.rules.LOGGER
+                if _l:
+                    _l.warning(f"Unknown field {field_name} on table {table_name}")
             elif rule_action == "error":
                 raise UnknownFilterFieldError(
                     f"Unknown field {field_name} on table {table_name}"

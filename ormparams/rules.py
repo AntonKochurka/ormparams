@@ -1,3 +1,4 @@
+import logging
 from typing import Literal, Optional
 
 from ormparams.suffixes import DEFAULT_SUFFIXES, SuffixSet
@@ -38,7 +39,9 @@ class ParserRules:
         suffix_delimiter: str = "__",
         relationships_delimiter: str = "@",
         unknown_filtrated_field: RuleReaction = "error",
+        logger: Optional[logging.Logger] = None,
     ):
+        self.LOGGER = logger
         self.SUFFIX_SET = suffix_set or DEFAULT_SUFFIXES
         self.SUFFIX_DELIMITER = suffix_delimiter
         self.RELATIONSHIPS_DELIMITER = relationships_delimiter

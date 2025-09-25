@@ -28,7 +28,7 @@ pip install "ormparams[fastapi]" # SOON!
 
 ORMParams provides four main components:
 
-1. **SuffixSet** – defines the set of suffixes and their functionality for filtering and serialization of data.  
+1. **SuffixSet** – defines the set of suffixes and their functionality for filtering and serialization of data.  [ [ > ] ](./docs/SuffixSet.md)
 2. **ParserRules** – defines the set of rules for parsing, specifying how each input should be processed.  
 3. **Parser** – implements the logic of separating URL parameters into tokens according to a unified format.  
 4. **OrmFilter** – applies filters to ORM queries based on standardized data.

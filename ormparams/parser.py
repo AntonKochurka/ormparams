@@ -1,4 +1,5 @@
 from typing import Dict, List, TypedDict
+from urllib.parse import parse_qsl
 
 from ormparams.exceptions import UnknownOperatorError
 from ormparams.rules import ParserRules
@@ -72,12 +73,10 @@ class Parser:
             UnknownOperatorError - if operator isn't registered in SuffixSet
         """
 
-        tokens = url.split("&")
         parsed_result: _tpz_parsed = {}
 
-        for token in tokens:
-            field_with_rel, raw_value = token.split("=")
-
+        pairs = parse_qsl(url, keep_blank_values=False)
+        for field_with_rel, raw_value in pairs:
             rel_parts = field_with_rel.split(self.rules.RELATIONSHIPS_DELIMITER)
             relationships = rel_parts[:-1]
             field_and_ops = rel_parts[-1].split(self.rules.SUFFIX_DELIMITER)
@@ -91,8 +90,9 @@ class Parser:
                 for op in operations:
                     if op not in valid_operations:
                         if unk == "warn":
-                            print(f"Unknown suffix: {op}")
-                            # TODO: Implement here a logic for logger.
+                            _l = self.rules.LOGGER
+                            if _l:
+                                _l.warning(f"Unknown suffix: {op}")
                         if unk == "error":
                             raise UnknownOperatorError(operator=op)
 

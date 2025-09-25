@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterator, Optional, Protocol, Self, Type, TypedDict
+from typing import Any, Dict, Iterator, Optional, Protocol, Self, Type, TypedDict, cast
 
 from sqlalchemy.orm import DeclarativeMeta
 
@@ -105,7 +105,19 @@ def DefaultSuffixSet() -> SuffixSet:
     s.register_suffix("contains", lambda col, v, m: col.contains(v))
     s.register_suffix("startswith", lambda col, v, m: col.startswith(v))
     s.register_suffix("endswith", lambda col, v, m: col.endswith(v))
-    s.register_suffix("in", lambda col, v, m: col.in_(v), lambda v: str(v).split(","))
+
+    def in_serializer(v: Any) -> list[str]:
+        if v is None:
+            return []
+        if isinstance(v, (list, tuple)):
+            return list(v)
+        return [x.strip() for x in str(v).split(",") if x.strip()]
+
+    s.register_suffix(
+        "in",
+        lambda col, v, m: col.in_(v),
+        serializer=cast(SuffixValueSerializer, in_serializer),
+    )
 
     return s
 
