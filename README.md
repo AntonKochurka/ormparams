@@ -20,7 +20,7 @@ pip install ormparams
 Also, for the upcoming FastAPI integration:
 
 ```bash
-pip install "ormparams[fastapi]" # SOON!
+pip install "ormparams[fastapi]"
 ```
 
 

@@ -3,7 +3,11 @@ from typing import Any, Dict, List, Optional, Self, Sequence, Type, Union
 from sqlalchemy import Select, select
 from sqlalchemy.orm import DeclarativeMeta, InstrumentedAttribute, RelationshipProperty
 
-from ormparams.exceptions import UnknownFilterFieldError, UnknownOperatorError
+from ormparams.exceptions import (
+    NotAllowedOperationError,
+    UnknownFilterFieldError,
+    UnknownOperatorError,
+)
 from ormparams.parser import Parser
 from ormparams.suffixes import SuffixValueSerializer
 
@@ -22,7 +26,9 @@ class OrmFilter:
         params: str,
         *,
         allowed_fields: Optional[Union[str, List[str]]] = None,
+        excluded_fields: Optional[List[str]] = None,
         allowed_operations: Optional[Union[str, List[str]]] = None,
+        excluded_operations: Optional[List[str]] = None,
         serializers: Optional[Dict[str, SuffixValueSerializer]] = None,
     ) -> Self:
         """
@@ -33,7 +39,8 @@ class OrmFilter:
             - params - urlparams for parser
                 -! not every urlparams for filtrating
                 -! make sure you separated which param for filtrating and which is not
-            - allowed fields and operations - undertandable from the name
+            - allowed fields and operations - allows only these fields to interact with
+            - excluded fields and operations - exclude fields
             - serializers - a dict of {"field_name": Callable(value)}
                 - ! You can make for instance
                         {"age": lambda v: ..., "age__in": lambda v: ...}
@@ -41,6 +48,9 @@ class OrmFilter:
         """
         if self.query is None:
             self.query = select(model)
+
+        excluded_fields = excluded_fields or []
+        excluded_operations = excluded_operations or []
 
         # to shut mypy up
         def _normalize(value: Union[str, Sequence[str], None]) -> Union[str, list[str]]:
@@ -63,6 +73,9 @@ class OrmFilter:
             if allowed_fields != "*" and field_name not in allowed_fields:
                 continue
 
+            if field_name in excluded_fields:
+                continue
+
             for statement in statements:
                 relationships: List[str] = statement["relationships"]
                 operations: List[str] = statement["operations"]
@@ -78,7 +91,23 @@ class OrmFilter:
                 self._validate_column(column_attr, field_name, relationships, model)
 
                 for op in operations:
+
+                    def _exclude_op(_op):
+                        _nao = self.parser.rules.NOT_ALLOWED_OPERATION
+                        _msg = f"Operation '{_op}' is not allowed"
+
+                        if _nao != "ignore":
+                            if _nao == "warn":
+                                self.parser.rules.LOGGER.warn(_msg)
+                            elif _nao == "error":
+                                raise NotAllowedOperationError(_msg)
+
+                    if op in excluded_operations:
+                        _exclude_op(op)
+                        continue
+
                     if allowed_operations != "*" and op not in allowed_operations:
+                        _exclude_op(op)
                         continue
 
                     serializer = None

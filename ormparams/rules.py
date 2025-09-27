@@ -40,6 +40,7 @@ class ParserRules:
         relationships_delimiter: str = "@",
         unknown_filtrated_field: RuleReaction = "error",
         logger: Optional[logging.Logger] = None,
+        not_allowed_operation: RuleReaction = "error",
     ):
         self.LOGGER = logger
         self.SUFFIX_SET = suffix_set or DEFAULT_SUFFIXES
@@ -47,4 +48,5 @@ class ParserRules:
         self.RELATIONSHIPS_DELIMITER = relationships_delimiter
 
         self.UNKNOWN_SUFFIX_REACTION = unknown_suffix_reaction
-        self.UNKNOWN_FIlTRATED_FIELD = unknown_filtrated_field
+        self.UNKNOWN_FILTRATED_FIELD = unknown_filtrated_field
+        self.NOT_ALLOWED_OPERATION = not_allowed_operation

@@ -12,3 +12,8 @@ class UnknownOperatorError(Exception):
 class UnknownFilterFieldError(Exception):
     def __init__(self, message: str):
         super().__init__(message)
+
+
+class NotAllowedOperationError(Exception):
+    def __init__(self, message: str):
+        super().__init__(message)
