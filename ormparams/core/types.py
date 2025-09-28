@@ -1,27 +1,17 @@
 from dataclasses import dataclass
-from typing import Annotated, Any, List, Literal, Protocol, Union
+from typing import (
+    Annotated,
+    Any,
+    Dict,
+    List,
+    Literal,
+    Protocol,
+    Union,
+)
+
+from sqlalchemy.orm import DeclarativeBase, InstrumentedAttribute
 
 PolicyReaction = Literal["error", "warn", "ignore"]
-
-
-class ORMAdapter(Protocol):
-    """Base contract for ORM adapters."""
-
-    class Column: ...
-
-    class Model: ...
-
-    class Session: ...
-
-    def where(self, column: Column, value: Any) -> Any:
-        """Return an ORM-specific filter expression."""
-
-
-class ORMAsyncAdapter(ORMAdapter, Protocol):
-    """Async variant of the ORM adapter."""
-
-    async def where(self, column: ORMAdapter.Column, value: Any) -> Any:
-        """Return an ORM-specific async filter expression."""
 
 
 class SuffixOperatorFunction(Protocol):
@@ -29,9 +19,9 @@ class SuffixOperatorFunction(Protocol):
 
     def __call__(
         self,
-        column: Annotated[ORMAdapter.Column, "Column to compare with"],
+        column: Annotated[InstrumentedAttribute, "Column to compare with"],
         value: Annotated[Any, "User-provided value"],
-        model: Annotated[ORMAdapter.Model, "Model context for advanced filtering"],
+        model: Annotated[DeclarativeBase, "Model context for advanced filtering"],
     ) -> Any: ...
 
 
@@ -82,6 +72,7 @@ class ParsedParam:
         This value may later be transformed by SuffixSerializerFunctions before filtering.
         """,
     ]
+    serializers: List[SuffixSerializerFunction] = []
 
 
 LogicUnit = Literal["AND", "OR"]
@@ -98,7 +89,7 @@ class ParsedField:
             ?field__operation1=value -> [ParsedParam(...)]
             ?field__op1=v1&field__op2=v2 -> [ParsedParam(...), ParsedParam(...)]
         """,
-    ]
+    ] = list()
 
     PARAMETRIC_LOGIC_EXECUTOR: Annotated[
         LogicExecutor,
@@ -138,3 +129,17 @@ class ParsedField:
               op1 <logic[0]> op2 <logic[1]> op3
         """,
     ] = "AND"
+
+    SERIALIZERS: Annotated[
+        Dict[str, SuffixSerializerFunction],
+        """
+        Dictionary, where a key is:
+            - a pure field ({"age": [...]})
+            - field with operator ({"age__le": [...]})
+        and value is callable function that accept value and changes it.
+
+        The priority:
+            first done is pure fields, second done is fields with operators.
+            all in order of appereance in the list.
+        """,
+    ] = dict()

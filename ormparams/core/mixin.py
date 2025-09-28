@@ -6,5 +6,7 @@ class OrmParamsMixin:
     OPERATIONAL_LOGIC_EXECUTOR: LogicExecutor
     # read about it in documentation, or parser.py/types.py annotations
 
-    # ALLOWED_FIELDS =
-    # ALLOWED_OPERATIONS =
+    ORMP_ALLOWED_FIELDS = ["*"]
+    ORMP_ALLOWED_OPERATIONS = ["*"]
+    ORMP_EXCLUDED_FIELDS = []
+    ORMP_EXCLUDED_OPERATIONS = []

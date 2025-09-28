@@ -55,6 +55,9 @@ class SuffixSet:
     def get(self, suffix: str) -> SuffixDefinition | None:
         return self._store.get(suffix)
 
+    def get_operators(self) -> List[str]:
+        return self._store.keys()
+
     def exists(self, suffix: str) -> bool:
         return suffix in self._store
 
