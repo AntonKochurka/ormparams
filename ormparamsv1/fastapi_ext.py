@@ -1,10 +1,9 @@
 from typing import List, Optional, Type, Union
 
 from fastapi import Request
-from sqlalchemy.orm import DeclarativeBase
-
 from ormparams.mixin import ORMParamsMixin
 from ormparams.parser import Parser
+from sqlalchemy.orm import DeclarativeBase
 
 
 def get_ormparams(

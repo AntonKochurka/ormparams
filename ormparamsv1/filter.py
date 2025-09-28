@@ -1,8 +1,5 @@
 from typing import Any, Dict, List, Optional, Self, Sequence, Type, Union
 
-from sqlalchemy import Select, select
-from sqlalchemy.orm import DeclarativeMeta, InstrumentedAttribute, RelationshipProperty
-
 from ormparams.exceptions import (
     NotAllowedOperationError,
     UnknownFilterFieldError,
@@ -10,6 +7,8 @@ from ormparams.exceptions import (
 )
 from ormparams.parser import Parser
 from ormparams.suffixes import SuffixValueSerializer
+from sqlalchemy import Select, select
+from sqlalchemy.orm import DeclarativeMeta, InstrumentedAttribute, RelationshipProperty
 
 _tpz_attr = Optional[InstrumentedAttribute[Any]]
 _tpz_query = Optional[Select[Any]]
