@@ -86,6 +86,7 @@ class OrmParamsFilter:
                 field_name,
                 parsed_field,
                 base_model=model,
+                base_allowed_relationships=allowed_relationships,
                 base_allowed_fields=allowed_fields,
                 base_allowed_ops=allowed_operations,
                 base_excluded_fields=excluded_fields,
@@ -104,6 +105,7 @@ class OrmParamsFilter:
         field_name,
         parsed_field,
         base_model: DeclarativeBase,
+        base_allowed_relationships=None,
         base_allowed_fields=None,
         base_excluded_fields=None,
         base_allowed_ops=None,
@@ -127,6 +129,11 @@ class OrmParamsFilter:
 
         for param in parsed_field.params:
             if getattr(param, "relationships", None):
+                diff = set(param.relationships) - set(base_allowed_relationships or {})
+                if len(diff) != 0:
+                    self.policy.EXCEPTION_WRAPPER.not_allowed_relationship(
+                        ", ".join(f"'{i}'" for i in diff)
+                    )
                 query = self._apply_relationship_joins(
                     query, base_model, param.relationships
                 )
@@ -414,7 +421,6 @@ class OrmParamsFilter:
 
         field = self.parsed.get(field_name, None)
         if field is None:
-            self.policy.EXCEPTION_WRAPPER.field_not_found(field_name)
             return self
 
         def normalize(
