@@ -5,26 +5,36 @@ from ormparams.core.types import PolicyReaction
 
 
 class ExceptionWrapper:
-    def missing_logger(self):
+    def missing_logger(self) -> None:
         raise LoggerMissingError("Logger is missing")
 
-    def field_not_found(self, field: str):
+    def field_not_found(self, field: str) -> None:
         raise FieldNotFoundError(f"The field '{field}' does not exist.")
 
-    def operation_undefined(self, operation: str):
+    def operation_undefined(self, operation: str) -> None:
         raise UndefinedOperationError(f"The operation '{operation}' is not defined.")
 
-    def excluded_operation(self, operation: str):
-        raise ExcludedOperationError(
-            f"The operation '{operation}' is not allowed to be usedhere."
+    def excluded_operator(self, operation: str) -> None:
+        raise ExcludedOperatorError(
+            f"The operation '{operation}' is not allowed to be used here."
         )
 
-    def excluded_field(self, field: str):
+    def excluded_field(self, field: str) -> None:
         raise ExcludedFieldError(f"The field '{field}' is not allowed to be used here.")
 
+    def not_allowed_relationship(self, relationship: str) -> None:
+        raise NotAllowedRelationshioError(
+            f"Relationships are nesseccary to be providen in allowed_relationships. \n Please, provide {relationship} in allowed_relationships"
+        )
+
     def reactor(
-        self, rule: PolicyReaction, logger: Callable[[], Logger], func, *args, **kwargs
-    ):
+        self,
+        rule: PolicyReaction,
+        logger: Callable[[], Logger],
+        func: Callable,
+        *args,
+        **kwargs,
+    ) -> None:
         """
         Executes `func` according to the policy rule:
             - "ignore": do nothing
@@ -34,6 +44,7 @@ class ExceptionWrapper:
         if rule == "ignore":
             return
         elif rule == "warn":
+            logger = logger()
             try:
                 func(*args, **kwargs)
             except Exception as e:
@@ -54,9 +65,13 @@ class UndefinedOperationError(Exception):
     """Raised when a requested operation/suffix is not defined in the suffix set."""
 
 
-class ExcludedOperationError(Exception):
+class ExcludedOperatorError(Exception):
     """When operation is not allowed to be operated"""
 
 
 class ExcludedFieldError(Exception):
+    """When field is not alllowed to be operated"""
+
+
+class NotAllowedRelationshioError(Exception):
     """When field is not alllowed to be operated"""

@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import (
     Annotated,
     Any,
@@ -19,7 +19,7 @@ class SuffixOperatorFunction(Protocol):
 
     def __call__(
         self,
-        column: Annotated[InstrumentedAttribute, "Column to compare with"],
+        column: Annotated[InstrumentedAttribute[Any], "Column to compare with"],
         value: Annotated[Any, "User-provided value"],
         model: Annotated[DeclarativeBase, "Model context for advanced filtering"],
     ) -> Any: ...
@@ -72,7 +72,6 @@ class ParsedParam:
         This value may later be transformed by SuffixSerializerFunctions before filtering.
         """,
     ]
-    serializers: List[SuffixSerializerFunction] = []
 
 
 LogicUnit = Literal["AND", "OR"]
@@ -89,7 +88,7 @@ class ParsedField:
             ?field__operation1=value -> [ParsedParam(...)]
             ?field__op1=v1&field__op2=v2 -> [ParsedParam(...), ParsedParam(...)]
         """,
-    ] = list()
+    ] = field(default_factory=list)
 
     PARAMETRIC_LOGIC_EXECUTOR: Annotated[
         LogicExecutor,
@@ -111,7 +110,7 @@ class ParsedField:
             - The list defines the direct combinators:
               param1 <logic[0]> param2 <logic[1]> param3
         """,
-    ] = "AND"
+    ] = field(default="AND")
 
     OPERATIONAL_LOGIC_EXECUTOR: Annotated[
         LogicExecutor,
@@ -128,7 +127,7 @@ class ParsedField:
             - The list defines the direct combinators:
               op1 <logic[0]> op2 <logic[1]> op3
         """,
-    ] = "AND"
+    ] = field(default="AND")
 
     SERIALIZERS: Annotated[
         Dict[str, SuffixSerializerFunction],
@@ -142,4 +141,45 @@ class ParsedField:
             first done is pure fields, second done is fields with operators.
             all in order of appereance in the list.
         """,
-    ] = dict()
+    ] = field(default_factory=dict)
+
+
+ParsedResult = Annotated[
+    Dict[str, ParsedField],
+    """
+    Dictionary mapping each field mentioned in the parameters to a ParsedField.
+
+    Examples:
+
+    1. Parametric logic (default AND):
+        URL: ?age__lt=18&age__gt=12
+        ParsedResult:
+        {
+            "age": ParsedField(
+                params=[
+                    ParsedParam(operators=['lt'], relationships=[], value='18'), 
+                    ParsedParam(operators=['gt'], relationships=[], value='12')
+                ],
+                PARAMETRIC_LOGIC_EXECUTOR: 'AND',
+                OPERATIONAL_LOGIC_EXECUTOR: 'AND'
+            )
+        }
+
+    2. Operational logic (multiple suffixes per parameter, default AND):
+        URL: ?age__lt__exact=15
+        ParsedResult:
+        {
+            "age": ParsedField(
+                params=[
+                    ParsedParam(operators=['lt', 'exact'], relationships=[], value='15')
+                ],
+                PARAMETRIC_LOGIC_EXECUTOR: 'AND',
+                OPERATIONAL_LOGIC_EXECUTOR: 'AND'
+            )
+        }
+
+    [ NOTES ]:
+        - Parametric logic: multiple parameters for the same field -> applied as AND
+        - Operational logic: multiple suffixes on same field -> applied as AND
+    """,
+]

@@ -2,47 +2,7 @@ from typing import Annotated, Dict
 from urllib.parse import parse_qsl
 
 from ormparams.core.policy import OrmParamsPolicy
-from ormparams.core.types import ParsedField, ParsedParam
-
-ParsedResult = Annotated[
-    Dict[str, ParsedField],
-    """
-    Dictionary mapping each field mentioned in the parameters to a ParsedField.
-
-    Examples:
-
-    1. Parametric logic (default AND):
-        URL: ?age__lt=18&age__gt=12
-        ParsedResult:
-        {
-            "age": ParsedField(
-                params=[
-                    ParsedParam(operators=['lt'], relationships=['age'], value='18'), 
-                    ParsedParam(operators=['gt'], relationships=['age'], value='12')
-                ],
-                PARAMETRIC_LOGIC_EXECUTOR: 'AND',
-                OPERATIONAL_LOGIC_EXECUTOR: 'AND'
-            )
-        }
-
-    2. Operational logic (multiple suffixes per parameter, default AND):
-        URL: ?age__lt__exact=15
-        ParsedResult:
-        {
-            "age": ParsedField(
-                params=[
-                    ParsedParam(operators=['lt', 'exact'], relationships=['age'], value='15')
-                ],
-                PARAMETRIC_LOGIC_EXECUTOR: 'AND',
-                OPERATIONAL_LOGIC_EXECUTOR: 'AND'
-            )
-        }
-
-    [ NOTES ]:
-        - Parametric logic: multiple parameters for the same field -> applied as AND
-        - Operational logic: multiple suffixes on same field -> applied as AND
-    """,
-]
+from ormparams.core.types import ParsedField, ParsedParam, ParsedResult
 
 
 class OrmParamsParser:

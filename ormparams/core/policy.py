@@ -4,6 +4,7 @@ from typing import Annotated, Optional
 
 from ormparams.core.exceptions import ExceptionWrapper
 from ormparams.core.suffixes import DefaultSuffixSet, SuffixSet
+from ormparams.core.types import PolicyReaction
 
 
 @dataclass
@@ -16,6 +17,10 @@ class OrmParamsPolicy:
     EXCEPTION_WRAPPER: Annotated[
         ExceptionWrapper, """A wrapper for different situations"""
     ] = ExceptionWrapper()
+
+    EXCLUDED_FIELD: PolicyReaction = "error"
+    EXCLUDED_OPERATOR: PolicyReaction = "error"
+    NOT_ALLOWED_RELATIONSHIP: PolicyReaction = "error"
 
     def get_logger(self) -> Logger:
         """Returns a logger, otherwise throws an error"""
